@@ -1,0 +1,740 @@
+
+
+
+4)package com.abc.util;
+
+ 
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+ 
+
+public class DBUtil {
+    
+    private static final String driverName = "org.postgresql.Driver";
+    private static final String url = "jdbc:postgresql://localhost:5432/testdb";
+    private static final String username ="postgres";
+    private static final String password="master";
+    
+    public static Connection getDBConnection() {
+        
+        Connection con = null;
+        
+        try {
+            Class.forName(driverName);
+            con = DriverManager.getConnection(url, username, password);            
+        }
+        catch(ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        catch(SQLException e) {
+            e.printStackTrace();
+        }
+        
+        return con;
+    }
+    
+    public static void closeDBConnection(Connection con) {
+        
+        if(con!=null) {
+            try {
+                con.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+ 
+
+}
+ 
+
+
+5)package jdbcproject;
+
+ 
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+ 
+
+import com.abc.util.DBUtil;
+
+ 
+
+public class UpdateDemo {
+
+ 
+
+    public static void main(String[] args) {
+        
+        Connection con = DBUtil.getDBConnection();
+        
+        String sql = "update product_tbl set price = 250000 where product_id = 103";
+        
+        try {
+            
+            Statement st = con.createStatement();
+            int result = st.executeUpdate(sql);
+            System.out.println("Rows updated: "+result);
+        }
+        catch(SQLException e) {
+            e.printStackTrace();
+        }
+        
+        finally {
+            DBUtil.closeDBConnection(con);
+        }    
+
+ 
+
+    }
+
+ 
+
+}
+ 
+
+
+6)[11:39 AM] Prasad (Guest)
+    create table product_tbl(product_id integer,name varchar(50),price numeric(10,2),primary key(product_id));
+
+    i created a new database called testdb in postgressql
+
+
+7)package jdbcproject;
+
+ 
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+ 
+
+import com.abc.util.DBUtil;
+
+ 
+
+public class SelectDemo {
+
+ 
+
+    public static void main(String[] args) {
+
+ 
+
+        Connection con = DBUtil.getDBConnection();
+
+ 
+
+        String sql = "select price,name from product_tbl";
+
+ 
+
+        try {
+
+ 
+
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery(sql);
+            while (rs.next()) {
+
+ 
+
+                String name = rs.getString("name");
+                double price = rs.getDouble("price");
+
+ 
+
+                System.out.println(name + "  " + price);
+            }
+
+ 
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+ 
+
+        finally {
+            DBUtil.closeDBConnection(con);
+        }
+
+ 
+
+    }
+
+ 
+
+}
+ 
+
+8)package jdbcproject;
+
+ 
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Scanner;
+
+ 
+
+import com.abc.util.DBUtil;
+
+ 
+
+public class PreparedStatementDemo {
+
+ 
+
+    public static void main(String[] args) {
+        
+        Scanner sc = new Scanner(System.in);
+        
+        System.out.println("Enter Product Id:");
+        int pid = sc.nextInt();
+        
+        System.out.println("Enter Product Name:");
+        String pname = sc.next();
+        
+        System.out.println("Enter Product Price:");
+        double price = sc.nextDouble();
+        
+        sc.close();    
+        
+        Connection con = DBUtil.getDBConnection();
+
+ 
+
+        String sql = "insert into product_tbl values(?,?,?)";
+
+ 
+
+        try {
+            
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, pid);
+            ps.setString(2, pname);
+            ps.setDouble(3, price);
+            
+            int result = ps.executeUpdate();
+            System.out.println("Rows added: "+result);
+            
+
+ 
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+ 
+
+        finally {
+            DBUtil.closeDBConnection(con);
+        }
+    }
+
+ 
+
+}
+
+
+9)
+    
+package com.abc.dao;
+
+ 
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+ 
+
+import com.abc.util.DBUtil;
+
+ 
+
+public class ProductDAO {
+    
+    public boolean insert(int pid, String name, double price) {
+        
+        boolean flag = false;
+        
+        Connection con = DBUtil.getDBConnection();
+
+ 
+
+        String sql = "insert into product_tbl values(?,?,?)";
+
+ 
+
+        try {
+            
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, pid);
+            ps.setString(2, name);
+            ps.setDouble(3, price);
+            
+            int result = ps.executeUpdate();
+            
+            if(result == 1) {
+                flag = true;
+            }            
+
+ 
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+ 
+
+        finally {
+            DBUtil.closeDBConnection(con);
+        }    
+        
+        return flag;        
+    }
+    
+    public void update() {
+        
+    }
+    
+    public void delete() {
+        
+    }
+    
+    public void select() {
+        
+    }
+    
+}
+ 
+10)
+
+package com.abc.main;
+
+ 
+
+import java.util.Scanner;
+
+ 
+
+import com.abc.service.ProductService;
+
+ 
+
+public class ProductMain {
+
+ 
+
+    public static void main(String[] args) {
+        
+        Scanner sc = new Scanner(System.in);
+        
+        System.out.println("Enter Product Id:");
+        int pid = sc.nextInt();
+        
+        System.out.println("Enter Product Name:");
+        String pname = sc.next();
+        
+        System.out.println("Enter Product Price:");
+        double price = sc.nextDouble();
+        
+        ProductService service = new ProductService();
+        boolean result = service.addProduct(pid, pname, price);
+        
+        if(result) {
+            System.out.println("Product added.");
+        }
+        else {
+            System.out.println("Something wrong");
+        }        
+        
+        sc.close();    
+
+ 
+
+    }
+
+ 
+
+}
+
+
+11)package com.abc.service;
+
+ 
+
+import com.abc.dao.ProductDAO;
+
+ 
+
+public class ProductService {
+    
+    
+    public boolean addProduct(int pid, String name, double price) {
+        
+        //validate input         
+        ProductDAO productDAO = new ProductDAO();
+        boolean result = productDAO.insert(pid, name, price);
+        
+        return result;
+    }
+
+ 
+
+}
+
+
+
+
+
+12)
+ Account_tbl:
+
+ 
+
+      id accno name balance opening_date account_type customer_id
+
+ 
+
+      constraints: 
+
+ 
+
+       id - primary key- auto increment using sequence start with 10000
+
+ 
+
+       accno - unique
+
+ 
+
+       account_type - check (saving or current)
+
+ 
+
+       customer_id - foreign key
+
+ 
+
+---------------------------------------------------------------------------
+  customer_tbl
+
+ 
+
+      id first_name last_name email mobile username password
+
+ 
+
+      constraints: 
+
+ 
+
+      id  - PK - auto increment using sequence start with 11
+ 
+
+
+
+13)public Product fetchProductById(int productId) {
+        
+        Connection con = DBUtil.getDBConnection();
+
+ 
+
+        String sql = "select * from product_tbl where product_id = ?";
+        
+        Product product = null;
+        
+        try {
+            
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, productId);
+            
+            ResultSet rs = ps.executeQuery();
+            
+            if(rs.next()) {                     
+                product = new Product();
+                product.setProductId(rs.getInt(1));
+                product.setName(rs.getString(2));
+                product.setPrice(rs.getDouble(3));                  
+            }    
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+ 
+
+        finally {
+            DBUtil.closeDBConnection(con);
+        }    
+        
+        return product;
+        
+    }
+        
+    public List<Product> fetchAllProducts() {
+        
+        Connection con = DBUtil.getDBConnection();
+        
+        String sql = "select * from product_tbl";    
+        
+        List<Product> products = new ArrayList<Product>();        
+        
+        try {
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            
+            while(rs.next()) {
+                
+                Product product = new Product();
+                product.setProductId(rs.getInt(1));
+                product.setName(rs.getString(2));
+                product.setPrice(rs.getDouble(3));    
+                
+                products.add(product);
+                
+            }            
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        finally {
+            DBUtil.closeDBConnection(con);
+        }
+        
+      return products;    
+        
+    }
+    
+    public void update() {
+        
+    }
+    
+    public void delete() {
+        
+    }
+    
+    public void select() {
+        
+    }
+
+
+
+
+14)public Product getProductById(int productId) {
+       
+        ProductDAO productDAO = new ProductDAO();
+       
+        Product product = productDAO.fetchProductById(productId);
+               
+        return product;
+    }
+   
+    public List<Product> getAllProducts() {
+       
+        ProductDAO productDAO = new ProductDAO();
+       
+        List<Product> products = productDAO.fetchAllProducts();
+       
+        return products;   
+       
+    }
+
+
+
+15)package com.abc.main;
+
+ 
+
+import java.util.Scanner;
+
+ 
+
+import com.abc.bean.Product;
+import com.abc.service.ProductService;
+
+ 
+
+public class SearchProductMain {
+
+ 
+
+    public static void main(String[] args) {
+        
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter product id:");
+        int pid = sc.nextInt();
+        
+        ProductService service = new ProductService();
+        Product product = service.getProductById(pid);
+        
+        if(product != null) {
+            int productId = product.getProductId();
+            String name = product.getName();
+            double price = product.getPrice();
+            
+            System.out.println(productId+" "+name+" "+price);
+        }
+        else {
+            System.out.println("Product not available");
+        }
+
+ 
+
+    }
+
+
+
+ 
+
+}
+ 
+
+
+16)package com.abc.main;
+
+ 
+
+import java.util.List;
+
+ 
+
+import com.abc.bean.Product;
+import com.abc.service.ProductService;
+
+ 
+
+public class DisplayAllProductMain {
+
+ 
+
+    public static void main(String[] args) {
+        
+        ProductService service = new ProductService();
+        
+        List<Product> products = service.getAllProducts();
+        
+        products.stream().forEach(p-> System.out.println(p.getProductId()+" "+p.getName()));        
+
+ 
+
+    }
+
+ 
+
+}
+
+
+
+
+dao method:_
+public void fetchProductById(int productId) {
+        
+        Connection con = DBUtil.getDBConnection();
+
+ 
+
+        String sql = "select * from product_tbl where product_id = ?";
+        
+        try {
+            
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setInt(1, productId);
+            ResultSet rs = ps.executeQuery();
+            
+            if(rs.next()) {                
+              System.out.println("Product Details");
+              int pid = rs.getInt("product_id");
+              String name = rs.getString(2);
+              double price = rs.getDouble(3);
+              System.out.println(pid+"  "+name+"  "+price);
+              
+            }    
+            else {
+                 System.out.println("not available");
+            }
+            
+
+ 
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+ 
+
+        finally {
+            DBUtil.closeDBConnection(con);
+        }    
+        
+    }
+
+
+service method:-
+
+public void getProductById(int productId) {
+       
+        ProductDAO productDAO = new ProductDAO();
+       
+        productDAO.fetchProductById(productId);
+    }
+
+
+main method:-
+package com.abc.main;
+
+ 
+
+import java.util.Scanner;
+
+ 
+
+import com.abc.service.ProductService;
+
+ 
+
+public class SearchProductMain {
+
+ 
+
+    public static void main(String[] args) {
+        
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter product id:");
+        int pid = sc.nextInt();
+        
+        ProductService service = new ProductService();
+        service.getProductById(pid);
+
+ 
+
+    }
+
+ 
+
+}
+
+
+
+
+
+
+
+
+
+
